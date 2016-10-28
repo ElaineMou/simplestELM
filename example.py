@@ -37,20 +37,15 @@ X_test = stdScaler_data.transform(X_test)
 stdScaler_target = StandardScaler()
 y_train = stdScaler_target.fit_transform(np.reshape(y_train,(-1,1)))  # /max(y_train)
 y_test = stdScaler_target.transform(np.reshape(y_test,(-1,1)))  # /max(y_train)
-y_train = y_train - min(y_train)
-y_test = y_test - min(y_test)
-#print "X:", X
-#print "y:", y
-#print "X train:", X_train
-#print "X test:", X_test
-print "y train:", y_train
-print "y test:", y_test
+y_min = min([min(y_train),min(y_test)])
+y_max = max([max(y_train),max(y_test)])
+y_range = y_max[0] - y_min[0];
 
 ## ELM TRAINING
 MAE_TRAIN_MINS = []
 MAE_TEST_MINS = []
 
-for M in range(1, 60, 1):
+for M in range(1, 120, 1):
     MAES_TRAIN = []
     MAES_TEST = []
     # print "Training with %s neurons..."%M
@@ -58,14 +53,12 @@ for M in range(1, 60, 1):
         ELM = ELMRegressor(M)
         ELM.fit(X_train, y_train)
         prediction = ELM.predict(X_train)
-        MAES_TRAIN.append(mean_absolute_error(y_train,
-                                              prediction))
+        MAES_TRAIN.append(mean_absolute_error(y_train,prediction))
 
         prediction = ELM.predict(X_test)
-        MAES_TEST.append(mean_absolute_error(y_test,
-                                             prediction))
-    MAE_TEST_MINS.append(sum(MAES_TEST)/float(len(MAES_TEST)))
-    MAE_TRAIN_MINS.append(sum(MAES_TRAIN)/float(len(MAES_TRAIN)))
+        MAES_TEST.append(mean_absolute_error(y_test,prediction))
+    MAE_TEST_MINS.append((sum(MAES_TEST)/float(len(MAES_TEST)))/y_range)
+    MAE_TRAIN_MINS.append((sum(MAES_TRAIN)/float(len(MAES_TRAIN)))/y_range)
 
 print "Minimum MAE ELM =", min(MAE_TEST_MINS)
 print "at: ", MAE_TEST_MINS.index(min(MAE_TEST_MINS))
@@ -78,7 +71,5 @@ df["train"] = MAE_TRAIN_MINS
 ax = df.plot()
 ax.set_xlabel("Number of Neurons in the hidden layer")
 ax.set_ylabel("Mean Absolute Error")
-ax.set_title(
-    "Extreme Learning Machine error obtained for the Abalone dataset \n when varying the number of neurons in the "
-    "hidden layer (min. at 23 neurons)")
+ax.set_title("Average ELM error for Abalone dataset per number of neurons in the hidden layer")
 plt.show()
